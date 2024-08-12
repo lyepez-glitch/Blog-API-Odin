@@ -1,0 +1,32 @@
+<!-- uploadForm.ejs -->
+<html>
+  <head>
+    <title>Upload file</title>
+
+     <link href="styles.css" rel="stylesheet">
+  </head>
+  <body>
+
+
+    <form action="/posts/<%= post.id %>/edit" method="post" class="form-example">
+    <div class="form-example">
+      <label for="title">Enter a title here: </label>
+      <input type="text" name="title" id="title" value="<%= post.title %>"/>
+      <label for="content">Enter content: </label>
+      <input type="text" name="content" id="content" value="<%= post.content %>"/>
+    </div>
+
+
+
+
+
+
+
+
+    <div class="form-example">
+      <input type="submit" value="Submit" />
+    </div>
+</form>
+
+  </body>
+</html>
