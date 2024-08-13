@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 const express = require('express')
-
+const cors = require('cors');
 require('dotenv').config();
 
 const session = require("express-session");
@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use(express.json());
 
-
+app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use(
@@ -129,20 +129,40 @@ function isAuthenticated(req, res, next) {
     }
     res.redirect('/log-in');
 }
-app.get("/", isAuthenticated, async(req, res) => {
-    let posts;
-    let user = res.locals.currentUser;
-    const { id } = res.locals.currentUser;
+app.get("/", async(req, res) => {
+
+    let posts = [],
+        user = {},
+        id = 4;
+    if (res.locals.currentUser) {
+        user = res.locals.currentUser;
+        id = res.locals.currentUser.id;
+    }
+
+
     const foundUser = await prisma.user.findUnique({
         where: { id: id },
         include: {
-            posts: true
+            posts: {
+                include: {
+                    comments: true
+                }
+            }
 
         },
     })
+    console.log('user', foundUser, res.locals.currentUser);
+    if (res.locals.currentUser) {
+        res.render("index", { user: foundUser });
+    } else {
+        res.json({ user: foundUser, posts: user.posts }
 
-    console.log('user', foundUser);
-    res.render("index", { user: foundUser });
+        )
+    }
+
+
+
+
 
 })
 
@@ -150,10 +170,26 @@ app.get("/", isAuthenticated, async(req, res) => {
 app.get("/comments", async(req, res) => {
     res.send("this is home");
 
+
 })
 app.post("/comments", async(req, res) => {
-    res.send("this is home");
+    console.log('req body', req.body)
+    const { text, postId, name, email, username } = req.body;
+    const newComment = await prisma.comment.create({
 
+        data: {
+            email,
+            username,
+            text,
+            post: {
+                connect: { id: parseInt(postId) }
+            }
+
+        },
+    })
+    console.log('newComment', newComment)
+
+    res.redirect('/');
 })
 
 app.put("/comments/:id", async(req, res) => {
@@ -166,7 +202,10 @@ app.delete("/comments/:id", async(req, res) => {
 })
 
 app.get("/posts", async(req, res) => {
-    res.render("createPost", {});
+    const posts = await prisma.post.findMany({
+        where: { id: 2 }
+    })
+    res.render("createPost", { posts });
 
 })
 app.post("/posts", async(req, res) => {
@@ -235,7 +274,14 @@ app.get("/posts/:id/publish", async(req, res) => {
     res.redirect('/');
 })
 
-
+app.get("/log-out", (req, res, next) => {
+    req.logout((err) => {
+        if (err) {
+            return next(err);
+        }
+        res.redirect("/");
+    });
+});
 
 
 

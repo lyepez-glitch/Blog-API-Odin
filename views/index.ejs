@@ -10,16 +10,27 @@
   <a href="/posts?id<%= user.id %>">Create a new post</a>
 <% } %>
 <h3>Posts:</h3>
+
 <% user.posts.forEach(function(post) { %>
     <div> Title: <%= post.title %> </div>
     <div> Content: <%= post.content%> </div>
     <div> Created at: <%= post.createdAt%> </div>
     <div> Published: <%= post.published%> </div>
+
     <div> Author: <%= user.firstName%> <%= user.lastName%></div>
 
     <a href="/posts/<%= post.id %>/edit">Edit Post</a>
     <a href="/posts/<%= post.id %>/publish">Publish Post</a>
+    <h3>Comments</h3>
+    <% post.comments.forEach(comment => { %>
+    <li>
 
+       comment name: <h2><%= comment.username %></h2>
+       comment content: <p><%= comment.text %></p>
+
+
+    </li>
+<% }); %>
 
   <% }); %>
 
