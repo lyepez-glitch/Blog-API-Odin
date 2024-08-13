@@ -229,10 +229,12 @@ app.post("/posts", async(req, res) => {
 })
 
 app.get("/posts/:id/edit", async(req, res) => {
+    //
     const { id } = req.params;
     const post = await prisma.post.findUnique({
         where: { id: parseInt(id) }
     })
+
 
     res.render("editPost", { post });
 
