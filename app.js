@@ -186,6 +186,37 @@ app.get("/", authenticateToken, async(req, res) => {
     const userId = req.user.user.id;
     res.send("test")
 });
+
+app.get("/view2/comments/delete/:id", async(req, res) => {
+    console.log('delete')
+    const deleteComment = await prisma.comment.delete({
+        where: {
+            id: parseInt(req.params.id)
+        },
+    })
+    console.log('deleteComment', deleteComment)
+    res.redirect('/view2posts?view=b')
+})
+app.post("/view2/comments/edit/:postId/:id", async(req, res) => {
+    const { text, username } = req.body;
+    const { postId, id } = req.params;
+    const updatedComment = await prisma.comment.update({
+        where: {
+            id: parseInt(req.params.id)
+        },
+        data: {
+            username,
+            email: username,
+            text,
+            post: {
+                connect: { id: parseInt(postId) }
+            }
+        },
+
+    })
+    console.log('updated Comment', updatedComment)
+    res.redirect('/view2posts?view=b')
+})
 app.get("/view2posts", async(req, res) => {
     const view = req.query.view;
     const foundUser = await prisma.user.findUnique({
@@ -215,6 +246,25 @@ app.get("/comments", async(req, res) => {
 
 
 })
+
+app.post("/post/:id/toggle", async(req, res) => {
+    console.log(220, 'toggle')
+    const { id } = req.params;
+    const post = await prisma.post.findUnique({
+        where: { id: parseInt(id) },
+    });
+
+    const updatedPost = await prisma.post.update({
+        where: { id: parseInt(id) },
+        data: {
+            published: !post.published,
+            author: {
+                connect: { id: 4 }
+            }
+        },
+    })
+    res.redirect('/view2posts?view=b')
+})
 app.post("/comments", async(req, res) => {
     console.log('req body', req.body)
     const { text, postId, name, email, username } = req.body;
@@ -224,9 +274,7 @@ app.post("/comments", async(req, res) => {
             email,
             username,
             text,
-            post: {
-                connect: { id: parseInt(postId) }
-            }
+            post: { connect: { id: parseInt(postId) } },
 
         },
     })
@@ -235,31 +283,48 @@ app.post("/comments", async(req, res) => {
     res.redirect('/');
 })
 
+app.post("/view2/comments", async(req, res) => {
+    console.log('req body', req.body)
+    const { text, postId, name, email, username } = req.body;
+    const newComment = await prisma.comment.create({
+
+        data: {
+            email,
+            username,
+            text,
+            post: { connect: { id: parseInt(postId) } },
+
+        },
+    })
+    console.log('newComment', newComment)
+
+    res.redirect('/view2posts?view=b');
+})
+
 app.put("/comments/:id", async(req, res) => {
     res.send("this is home");
 
 })
 app.delete("/comments/:id", async(req, res) => {
     res.send("this is home");
-
 })
 
 app.get("/posts", async(req, res) => {
     const posts = await prisma.post.findMany({
-        where: { id: 2 }
+        where: { id: 2 },
     })
     res.render("createPost", { posts });
 
 })
 app.post("/posts", async(req, res) => {
-    const { id } = res.locals.currentUser;
+    console.log('req body', req.body);
     const { title, content } = req.body;
     const newPost = await prisma.post.create({
         data: {
             title,
             content,
             author: {
-                connect: { id: id }
+                connect: { id: 4 }
             }
         }
     })
@@ -268,6 +333,26 @@ app.post("/posts", async(req, res) => {
 
     console.log("new post", newPost)
     res.redirect('/');
+
+})
+
+app.post("/view2/posts", async(req, res) => {
+    console.log('req body', req.body);
+    const { title, content } = req.body;
+    const newPost = await prisma.post.create({
+        data: {
+            title,
+            content,
+            author: {
+                connect: { id: 4 }
+            }
+        }
+    })
+
+
+
+    console.log("new post", newPost)
+    res.redirect('/view2posts?view=b')
 
 })
 
@@ -313,6 +398,8 @@ app.get("/posts/:id/publish", async(req, res) => {
         where: { id: parseInt(id) },
         data: {
             published: true
+
+
         },
     })
     console.log("published", updatedPost)
