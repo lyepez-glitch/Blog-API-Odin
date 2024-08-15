@@ -1,8 +1,69 @@
-<h1>please log in</h1>
-<form action="/log-in" method="POST">
-  <label for="username">Username</label>
+<h1>Please log in</h1>
+<form id='loginForm'>
+  <label for="username">Email</label>
   <input id="username" name="username" placeholder="username" type="text" />
   <label for="password">Password</label>
   <input id="password" name="password" type="password" />
-  <button>Log In</button>
+  <button type="submit" id="login">Log In</button>
 </form>
+
+<a id="home">Home</a>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', function(event) {
+    event.preventDefault(); // Prevent the default form submission behavior
+
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    fetch('/log-in', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Login data:', data);
+
+        if (data.accessToken) {
+            localStorage.setItem('token', data.accessToken);
+            // Fetch the home page with the token
+            fetchWithToken('/');
+        } else {
+            console.error('No token received');
+            alert('Login failed, please try again.');
+        }
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('An error occurred during login. Please try again.');
+    });
+});
+
+// Function to fetch with token and handle redirection
+function fetchWithToken(url) {
+    const token = localStorage.getItem('token');
+    console.log('Token in fetchWithToken:', token);
+
+    fetch(url, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        }
+    })
+    .then(response => {
+        window.location.href = "/view2posts?view=a"
+        console.log('res',response)
+    })
+    .catch(error => {
+        console.error('Fetch error:', error);
+        alert('Error occurred while fetching the home page.');
+    });
+}
+
+
+
+</script>

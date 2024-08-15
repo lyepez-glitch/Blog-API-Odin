@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>File Uploader</title>
+</head>
+<body>
+
+
+<a id="comments" href="/comments">Go to comments</a>
+
+
+
+
+  <a href="/log-out">LOG OUT</a>
+<script>
+        document.getElementById('comments').addEventListener('click', function(event) {
+            event.preventDefault(); // Prevent default anchor behavior
+
+            // Fetch the protected route
+            fetch('/comments', {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token'), // Attach token from localStorage
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Protected data:', data);
+                // Optionally, handle the data here (e.g., update the UI)
+                alert('Successfully fetched protected data!');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to fetch protected data.');
+            });
+        });
+    </script>
+
+</body>
+</html>

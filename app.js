@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
+var jwt = require('jsonwebtoken');
 
 const express = require('express')
 const cors = require('cors');
@@ -112,36 +113,83 @@ app.post("/signUp", (req, res) => {
 });
 
 app.get("/log-in", (req, res) => {
-    res.render("login", {});
+        res.render("login", {});
+    })
+    // app.post("/log-in", async(req, res) => {
+    //     const { username, password } = req.body;
+    //     const user = await prisma.user.findUnique({
+    //         where: { email: username }
+    //     })
+    //     req.user = user;
+    //     jwt.sign({ user }, 'secretkey', { expiresIn: '30s' }, (err, token) => {
+    //             res.json({
+    //                 token
+    //             })
+    //         })
+    //         // res.redirect('/');
+
+// })
+const accessTokenSecret = 'youraccesstokensecret';
+app.post('/log-in', async(req, res) => {
+    const { username, password } = req.body;
+    const user = await prisma.user.findUnique({
+        where: { email: username }
+    })
+    if (user) {
+        const accessToken = jwt.sign({ user }, accessTokenSecret);
+
+        res.json({
+            accessToken
+        });
+    }
 })
 
-app.post(
-    "/log-in",
-    passport.authenticate("local", {
-        successRedirect: "/",
-        failureRedirect: "/log-in"
-    })
-);
+function verifyToken(req, res, next) {
+    const bearerHeader = req.headers['authorization'];
+    console.log('Authorization Header:', bearerHeader);
 
-function isAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) {
-        return next();
+    if (bearerHeader && typeof bearerHeader === 'string') {
+        const bearer = bearerHeader.split(' ');
+        console.log('Bearer Array:', bearer);
+
+        if (bearer.length === 2 && bearer[0] === 'Bearer') {
+            const token = bearer[1];
+            req.token = token;
+            console.log('Token:', token);
+            next();
+        } else {
+            console.error('Invalid Authorization Header Format');
+            res.sendStatus(403); // Forbidden
+        }
+    } else {
+        console.error('No Authorization Header Provided');
+        res.sendStatus(403); // Forbidden
     }
-    res.redirect('/log-in');
 }
-app.get("/", async(req, res) => {
 
-    let posts = [],
-        user = {},
-        id = 4;
-    if (res.locals.currentUser) {
-        user = res.locals.currentUser;
-        id = res.locals.currentUser.id;
-    }
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers['authorization']
+    console.log('header', req.headers);
+    const token = authHeader && authHeader.split(" ")[1]
+    console.log('token', token);
+    if (token == null) return res.sendStatus(401);
+    jwt.verify(token, accessTokenSecret, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        console.log("req user", req.user)
+        next();
+    })
+}
+app.get("/", authenticateToken, async(req, res) => {
+    console.log('req.user', req.user)
 
-
+    const userId = req.user.user.id;
+    res.send("test")
+});
+app.get("/view2posts", async(req, res) => {
+    const view = req.query.view;
     const foundUser = await prisma.user.findUnique({
-        where: { id: id },
+        where: { id: 4 },
         include: {
             posts: {
                 include: {
@@ -151,21 +199,16 @@ app.get("/", async(req, res) => {
 
         },
     })
-    console.log('user', foundUser, res.locals.currentUser);
-    if (res.locals.currentUser) {
-        res.render("index", { user: foundUser });
+    if (view === 'a') {
+        res.render("index", { user: foundUser })
     } else {
-        res.json({ user: foundUser, posts: user.posts }
-
-        )
+        res.json({ user: foundUser, posts: foundUser.posts })
     }
 
 
 
 
-
 })
-
 
 app.get("/comments", async(req, res) => {
     res.send("this is home");
